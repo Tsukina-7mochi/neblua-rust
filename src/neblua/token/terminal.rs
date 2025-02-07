@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TerminalToken {
     LiteralString(LiteralString),
     Name(Name),
@@ -7,7 +7,7 @@ pub enum TerminalToken {
     Comma,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LiteralString {
     value: Vec<u8>,
 }
@@ -18,7 +18,7 @@ impl LiteralString {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Name {
     value: Vec<u8>,
 }

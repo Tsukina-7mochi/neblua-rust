@@ -2,26 +2,30 @@ mod terminal;
 
 pub use terminal::*;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     // terminal tokens
     LiteralString(LiteralString),
     Name(Name),
 
     // non-terminal tokens
-    FunctionCall(Name, Args),
+    FunctionCall(FunctionCall),
     Args(Args),
-    ExpList(ExpList),
     Exp(Exp),
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct FunctionCall {
+    pub name: Name,
+    pub args: Args,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Args {
-    exp_list: ExpList,
+    pub exp_list: Vec<Exp>,
 }
 
-pub struct ExpList {
-    exp_list: Vec<Exp>,
-}
-
+#[derive(Debug, PartialEq, Eq)]
 pub enum Exp {
     LiteralString(LiteralString),
 }
