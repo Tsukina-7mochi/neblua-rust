@@ -6,7 +6,7 @@ use neblua::tokenizer;
 fn main() {
     let input = "print(\"hello\", \"world\")";
 
-    let tokens = tokenizer::tokenize(input);
+    let tokens = tokenizer::tokenize(input).unwrap();
     println!("Tokens:");
     for token in &tokens {
         println!("{}", token);

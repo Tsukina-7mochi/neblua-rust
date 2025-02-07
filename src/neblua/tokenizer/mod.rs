@@ -1,19 +1,19 @@
 use super::token::Token;
 
-pub fn tokenize(input: &str) -> Vec<Token> {
-    let tokenizer = Tokenizer::new(input);
-    TokenizerIterator { tokenizer }.collect()
-}
+pub fn tokenize(input: &str) -> Option<Vec<Token>> {
+    let mut tokenizer = Tokenizer::new(input);
+    let mut result = vec![];
 
-struct TokenizerIterator<'a> {
-    tokenizer: Tokenizer<'a>,
-}
+    loop {
+        match tokenizer.consume() {
+            Some(token) => result.push(token),
+            None => break,
+        }
+    }
 
-impl<'a> Iterator for TokenizerIterator<'a> {
-    type Item = Token;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.tokenizer.consume()
+    match tokenizer.is_empty() {
+        true => Some(result),
+        false => None,
     }
 }
 
@@ -35,6 +35,10 @@ impl<'a> Tokenizer<'a> {
         self.consume_char()
             .or_else(|| self.consume_literal_string())
             .or_else(|| self.consume_name())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.index >= self.input.len()
     }
 
     fn skip_whitespace(&mut self) {
@@ -140,7 +144,7 @@ mod tests {
         #[test]
         fn empty_string() {
             let tokens = tokenize(" ");
-            assert_eq!(tokens, vec![]);
+            assert_eq!(tokens, Some(vec![]));
         }
 
         #[test]
@@ -148,12 +152,12 @@ mod tests {
             let tokens = tokenize("print(\"hello\")");
             assert_eq!(
                 tokens,
-                vec![
+                Some(vec![
                     Token::Name("print".as_bytes().to_vec()),
                     Token::BeginParen,
                     Token::LiteralString("hello".as_bytes().to_vec()),
                     Token::EndParen,
-                ],
+                ]),
             );
         }
     }
