@@ -132,96 +132,126 @@ impl<'a> Tokenizer<'a> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
-    #[test]
-    fn consume_begin_paren() {
-        let mut tokenizer = Tokenizer::new(" ( ");
-        assert_eq!(tokenizer.consume(), Some(TerminalToken::BeginParen));
+    #[cfg(test)]
+    mod tokenize {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let tokens = tokenize(" ");
+            assert_eq!(tokens, vec![]);
+        }
+
+        #[test]
+        fn print_hello() {
+            let tokens = tokenize("print(\"hello\")");
+            assert_eq!(
+                tokens,
+                vec![
+                    TerminalToken::Name(Name::new("print".as_bytes().to_vec())),
+                    TerminalToken::BeginParen,
+                    TerminalToken::LiteralString(LiteralString::new("hello".as_bytes().to_vec())),
+                    TerminalToken::EndParen,
+                ],
+            );
+        }
     }
 
-    #[test]
-    fn consume_end_paren() {
-        let mut tokenizer = Tokenizer::new(" ) ");
-        assert_eq!(tokenizer.consume(), Some(TerminalToken::EndParen));
-    }
+    #[cfg(test)]
+    mod tokenizer {
+        use super::*;
 
-    #[test]
-    fn consume_comma() {
-        let mut tokenizer = Tokenizer::new(" , ");
-        assert_eq!(tokenizer.consume(), Some(TerminalToken::Comma));
-    }
+        #[test]
+        fn consume_begin_paren() {
+            let mut tokenizer = Tokenizer::new(" ( ");
+            assert_eq!(tokenizer.consume(), Some(TerminalToken::BeginParen));
+        }
 
-    #[test]
-    fn consume_literal_string() {
-        let mut tokenizer = Tokenizer::new(" \"hello\" ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::LiteralString(LiteralString::new(
-                "hello".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_end_paren() {
+            let mut tokenizer = Tokenizer::new(" ) ");
+            assert_eq!(tokenizer.consume(), Some(TerminalToken::EndParen));
+        }
 
-    #[test]
-    fn consume_literal_string_includes_escape_sequence() {
-        let mut tokenizer = Tokenizer::new(" \"hello\\\"world\" ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::LiteralString(LiteralString::new(
-                "hello\\\"world".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_comma() {
+            let mut tokenizer = Tokenizer::new(" , ");
+            assert_eq!(tokenizer.consume(), Some(TerminalToken::Comma));
+        }
 
-    #[test]
-    fn consume_literal_string_contains_utf8_2_byte_char() {
-        let mut tokenizer = Tokenizer::new(" \"α\" ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::LiteralString(LiteralString::new(
-                "α".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_literal_string() {
+            let mut tokenizer = Tokenizer::new(" \"hello\" ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::LiteralString(LiteralString::new(
+                    "hello".as_bytes().to_vec()
+                )))
+            );
+        }
 
-    #[test]
-    fn consume_literal_string_contains_utf8_3_byte_char() {
-        let mut tokenizer = Tokenizer::new(" \"あ\" ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::LiteralString(LiteralString::new(
-                "あ".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_literal_string_includes_escape_sequence() {
+            let mut tokenizer = Tokenizer::new(" \"hello\\\"world\" ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::LiteralString(LiteralString::new(
+                    "hello\\\"world".as_bytes().to_vec()
+                )))
+            );
+        }
 
-    #[test]
-    fn consume_literal_string_contains_utf8_4_byte_char() {
-        let mut tokenizer = Tokenizer::new(" \"💖\" ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::LiteralString(LiteralString::new(
-                "💖".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_literal_string_contains_utf8_2_byte_char() {
+            let mut tokenizer = Tokenizer::new(" \"α\" ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::LiteralString(LiteralString::new(
+                    "α".as_bytes().to_vec()
+                )))
+            );
+        }
 
-    #[test]
-    fn consume_name() {
-        let mut tokenizer = Tokenizer::new(" _foo_123 ");
-        assert_eq!(
-            tokenizer.consume(),
-            Some(TerminalToken::Name(Name::new(
-                "_foo_123".as_bytes().to_vec()
-            )))
-        );
-    }
+        #[test]
+        fn consume_literal_string_contains_utf8_3_byte_char() {
+            let mut tokenizer = Tokenizer::new(" \"あ\" ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::LiteralString(LiteralString::new(
+                    "あ".as_bytes().to_vec()
+                )))
+            );
+        }
 
-    #[test]
-    fn consume_name_fails_if_name_starts_with_numeric() {
-        let mut tokenizer = Tokenizer::new(" 0_foo ");
-        assert_eq!(tokenizer.consume(), None);
+        #[test]
+        fn consume_literal_string_contains_utf8_4_byte_char() {
+            let mut tokenizer = Tokenizer::new(" \"💖\" ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::LiteralString(LiteralString::new(
+                    "💖".as_bytes().to_vec()
+                )))
+            );
+        }
+
+        #[test]
+        fn consume_name() {
+            let mut tokenizer = Tokenizer::new(" _foo_123 ");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(TerminalToken::Name(Name::new(
+                    "_foo_123".as_bytes().to_vec()
+                )))
+            );
+        }
+
+        #[test]
+        fn consume_name_fails_if_name_starts_with_numeric() {
+            let mut tokenizer = Tokenizer::new(" 0_foo ");
+            assert_eq!(tokenizer.consume(), None);
+        }
     }
 }
