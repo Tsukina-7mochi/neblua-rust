@@ -69,8 +69,6 @@ impl<'a> Tokenizer<'a> {
         let mut value = Vec::<u8>::new();
         loop {
             self.index += 1;
-            dbg!(&value);
-            dbg!(self.index);
 
             let next_char = self.input.get(self.index).unwrap();
             if *next_char == b'"' {
