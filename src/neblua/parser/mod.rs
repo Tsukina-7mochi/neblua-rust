@@ -1,22 +1,23 @@
-use super::token::*;
+use super::ast::node::*;
+use super::token::Token;
 
-pub fn parse(input: &Vec<TerminalToken>) -> Option<Token> {
+pub fn parse(input: &Vec<Token>) -> Option<Node> {
     let mut parser = Parser::new(input);
     parser.parse()
 }
 
 struct Parser<'a> {
     index: usize,
-    input: &'a Vec<TerminalToken>,
+    input: &'a Vec<Token>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(input: &'a Vec<TerminalToken>) -> Self {
+    pub fn new(input: &'a Vec<Token>) -> Self {
         Self { index: 0, input }
     }
 
-    pub fn parse(&mut self) -> Option<Token> {
-        Some(Token::FunctionCall(self.parse_function_call()?))
+    pub fn parse(&mut self) -> Option<Node> {
+        Some(Node::FunctionCall(self.parse_function_call()?))
     }
 
     fn parse_function_call(&mut self) -> Option<FunctionCall> {
@@ -58,9 +59,11 @@ impl<'a> Parser<'a> {
 
     fn consume_name(&mut self) -> Option<Name> {
         match self.input.get(self.index) {
-            Some(TerminalToken::Name(name)) => {
+            Some(Token::Name(value)) => {
                 self.index += 1;
-                Some(name.clone())
+                Some(Name {
+                    value: value.clone(),
+                })
             }
             _ => None,
         }
@@ -68,9 +71,11 @@ impl<'a> Parser<'a> {
 
     fn consume_literal_string(&mut self) -> Option<LiteralString> {
         match self.input.get(self.index) {
-            Some(TerminalToken::LiteralString(value)) => {
+            Some(Token::LiteralString(value)) => {
                 self.index += 1;
-                Some(value.clone())
+                Some(LiteralString {
+                    value: value.clone(),
+                })
             }
             _ => None,
         }
@@ -78,7 +83,7 @@ impl<'a> Parser<'a> {
 
     fn consume_begin_paren(&mut self) -> bool {
         match self.input.get(self.index) {
-            Some(TerminalToken::BeginParen) => {
+            Some(Token::BeginParen) => {
                 self.index += 1;
                 true
             }
@@ -88,7 +93,7 @@ impl<'a> Parser<'a> {
 
     fn consume_end_paren(&mut self) -> bool {
         match self.input.get(self.index) {
-            Some(TerminalToken::EndParen) => {
+            Some(Token::EndParen) => {
                 self.index += 1;
                 true
             }
@@ -98,7 +103,7 @@ impl<'a> Parser<'a> {
 
     fn consume_comma(&mut self) -> bool {
         match self.input.get(self.index) {
-            Some(TerminalToken::Comma) => {
+            Some(Token::Comma) => {
                 self.index += 1;
                 true
             }
@@ -118,23 +123,29 @@ mod tests {
         #[test]
         fn parse_function_call() {
             let input = vec![
-                TerminalToken::Name(Name::new("print".as_bytes().to_vec())),
-                TerminalToken::BeginParen,
-                TerminalToken::LiteralString(LiteralString::new("hello".as_bytes().to_vec())),
-                TerminalToken::Comma,
-                TerminalToken::LiteralString(LiteralString::new("world".as_bytes().to_vec())),
-                TerminalToken::EndParen,
+                Token::Name("print".as_bytes().to_vec()),
+                Token::BeginParen,
+                Token::LiteralString("hello".as_bytes().to_vec()),
+                Token::Comma,
+                Token::LiteralString("world".as_bytes().to_vec()),
+                Token::EndParen,
             ];
             let mut parser = Parser::new(&input);
 
             let actual = parser.parse_function_call();
 
             let expected = Some(FunctionCall {
-                name: Name::new("print".as_bytes().to_vec()),
+                name: Name {
+                    value: "print".as_bytes().to_vec(),
+                },
                 args: Args {
                     exp_list: vec![
-                        Exp::LiteralString(LiteralString::new("hello".as_bytes().to_vec())),
-                        Exp::LiteralString(LiteralString::new("world".as_bytes().to_vec())),
+                        Exp::LiteralString(LiteralString {
+                            value: "hello".as_bytes().to_vec(),
+                        }),
+                        Exp::LiteralString(LiteralString {
+                            value: "world".as_bytes().to_vec(),
+                        }),
                     ],
                 },
             });
@@ -144,11 +155,11 @@ mod tests {
         #[test]
         fn parse_args() {
             let input = vec![
-                TerminalToken::BeginParen,
-                TerminalToken::LiteralString(LiteralString::new("hello".as_bytes().to_vec())),
-                TerminalToken::Comma,
-                TerminalToken::LiteralString(LiteralString::new("world".as_bytes().to_vec())),
-                TerminalToken::EndParen,
+                Token::BeginParen,
+                Token::LiteralString("hello".as_bytes().to_vec()),
+                Token::Comma,
+                Token::LiteralString("world".as_bytes().to_vec()),
+                Token::EndParen,
             ];
             let mut parser = Parser::new(&input);
 
@@ -156,8 +167,12 @@ mod tests {
 
             let expected = Some(Args {
                 exp_list: vec![
-                    Exp::LiteralString(LiteralString::new("hello".as_bytes().to_vec())),
-                    Exp::LiteralString(LiteralString::new("world".as_bytes().to_vec())),
+                    Exp::LiteralString(LiteralString {
+                        value: "hello".as_bytes().to_vec(),
+                    }),
+                    Exp::LiteralString(LiteralString {
+                        value: "world".as_bytes().to_vec(),
+                    }),
                 ],
             });
             assert_eq!(actual, expected);
@@ -165,16 +180,14 @@ mod tests {
 
         #[test]
         fn parse_exp() {
-            let input = vec![TerminalToken::LiteralString(LiteralString::new(
-                "hello".as_bytes().to_vec(),
-            ))];
+            let input = vec![Token::LiteralString("hello".as_bytes().to_vec())];
             let mut parser = Parser::new(&input);
 
             let actual = parser.parse_exp();
 
-            let expected = Some(Exp::LiteralString(LiteralString::new(
-                "hello".as_bytes().to_vec(),
-            )));
+            let expected = Some(Exp::LiteralString(LiteralString {
+                value: "hello".as_bytes().to_vec(),
+            }));
             assert_eq!(actual, expected);
         }
     }
