@@ -1,6 +1,6 @@
 pub mod error;
 
-use super::token::Token;
+use super::token::{Token, TokenKind};
 use error::Error;
 
 /** Tokenizes the given input string into a sequence of tokens. */
@@ -84,9 +84,9 @@ impl<'a> Tokenizer<'a> {
     fn consume_char(&mut self) -> Option<Result<Token, Error>> {
         let head_char = self.input.get(self.index)?;
         let token = match *head_char {
-            b'(' => Token::BeginParen,
-            b')' => Token::EndParen,
-            b',' => Token::Comma,
+            b'(' => Token::new(self.index, TokenKind::BeginParen),
+            b')' => Token::new(self.index, TokenKind::EndParen),
+            b',' => Token::new(self.index, TokenKind::Comma),
             _ => return None,
         };
 
@@ -96,6 +96,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn consume_literal_string(&mut self) -> Option<Result<Token, Error>> {
+        let token_index = self.index;
+
         if !self.input.get(self.index).is_some_and(|x| *x == b'"') {
             return None;
         }
@@ -135,10 +137,11 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        Some(Ok(Token::LiteralString(value)))
+        Some(Ok(Token::new(token_index, TokenKind::LiteralString(value))))
     }
 
     fn consume_name(&mut self) -> Option<Token> {
+        let token_index = self.index;
         let mut value = Vec::<u8>::new();
 
         match self.input.get(self.index) {
@@ -165,7 +168,7 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        Some(Token::Name(value))
+        Some(Token::new(token_index, TokenKind::Name(value)))
     }
 }
 
@@ -189,11 +192,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 Ok(vec![
-                    Token::Name("print".as_bytes().to_vec()),
-                    Token::BeginParen,
-                    Token::LiteralString("hello".as_bytes().to_vec()),
-                    Token::EndParen,
-                ]),
+                    Token::new(0, TokenKind::Name("print".as_bytes().to_vec())),
+                    Token::new(5, TokenKind::BeginParen),
+                    Token::new(6, TokenKind::LiteralString("hello".as_bytes().to_vec())),
+                    Token::new(13, TokenKind::EndParen),
+                ])
             );
         }
     }
@@ -204,75 +207,100 @@ mod tests {
 
         #[test]
         fn consume_begin_paren() {
-            let mut tokenizer = Tokenizer::new(" ( ");
-            assert_eq!(tokenizer.consume(), Some(Ok(Token::BeginParen)));
+            let mut tokenizer = Tokenizer::new("(");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(Ok(Token::new(0, TokenKind::BeginParen)))
+            );
         }
 
         #[test]
         fn consume_end_paren() {
-            let mut tokenizer = Tokenizer::new(" ) ");
-            assert_eq!(tokenizer.consume(), Some(Ok(Token::EndParen)));
+            let mut tokenizer = Tokenizer::new(")");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(Ok(Token::new(0, TokenKind::EndParen)))
+            );
         }
 
         #[test]
         fn consume_comma() {
-            let mut tokenizer = Tokenizer::new(" , ");
-            assert_eq!(tokenizer.consume(), Some(Ok(Token::Comma)));
+            let mut tokenizer = Tokenizer::new(",");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(Ok(Token::new(0, TokenKind::Comma)))
+            );
         }
 
         #[test]
         fn consume_literal_string() {
-            let mut tokenizer = Tokenizer::new(" \"hello\" ");
+            let mut tokenizer = Tokenizer::new("\"hello\"");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::LiteralString("hello".as_bytes().to_vec())))
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::LiteralString("hello".as_bytes().to_vec())
+                )))
             );
         }
 
         #[test]
         fn consume_literal_string_includes_escape_sequence() {
-            let mut tokenizer = Tokenizer::new(" \"hello\\\"world\" ");
+            let mut tokenizer = Tokenizer::new("\"hello\\\"world\"");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::LiteralString(
-                    "hello\\\"world".as_bytes().to_vec()
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::LiteralString("hello\\\"world".as_bytes().to_vec())
                 )))
             );
         }
 
         #[test]
         fn consume_literal_string_contains_utf8_2_byte_char() {
-            let mut tokenizer = Tokenizer::new(" \"α\" ");
+            let mut tokenizer = Tokenizer::new("\"α\"");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::LiteralString("α".as_bytes().to_vec())))
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::LiteralString("α".as_bytes().to_vec())
+                )))
             );
         }
 
         #[test]
         fn consume_literal_string_contains_utf8_3_byte_char() {
-            let mut tokenizer = Tokenizer::new(" \"あ\" ");
+            let mut tokenizer = Tokenizer::new("\"あ\"");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::LiteralString("あ".as_bytes().to_vec())))
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::LiteralString("あ".as_bytes().to_vec())
+                )))
             );
         }
 
         #[test]
         fn consume_literal_string_contains_utf8_4_byte_char() {
-            let mut tokenizer = Tokenizer::new(" \"💖\" ");
+            let mut tokenizer = Tokenizer::new("\"💖\"");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::LiteralString("💖".as_bytes().to_vec())))
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::LiteralString("💖".as_bytes().to_vec())
+                )))
             );
         }
 
         #[test]
         fn consume_name() {
-            let mut tokenizer = Tokenizer::new(" _foo_123 ");
+            let mut tokenizer = Tokenizer::new("_foo_123");
             assert_eq!(
                 tokenizer.consume(),
-                Some(Ok(Token::Name("_foo_123".as_bytes().to_vec())))
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::Name("_foo_123".as_bytes().to_vec())
+                )))
             );
         }
     }

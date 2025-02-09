@@ -1,5 +1,5 @@
 use super::ast::node::*;
-use super::token::Token;
+use super::token::{Token, TokenKind};
 
 pub fn parse(input: &Vec<Token>) -> Option<Node> {
     let mut parser = Parser::new(input);
@@ -58,8 +58,8 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_name(&mut self) -> Option<Name> {
-        match self.input.get(self.index) {
-            Some(Token::Name(value)) => {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::Name(value)) => {
                 self.index += 1;
                 Some(Name {
                     value: value.clone(),
@@ -70,8 +70,8 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_literal_string(&mut self) -> Option<LiteralString> {
-        match self.input.get(self.index) {
-            Some(Token::LiteralString(value)) => {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::LiteralString(value)) => {
                 self.index += 1;
                 Some(LiteralString {
                     value: value.clone(),
@@ -82,8 +82,8 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_begin_paren(&mut self) -> bool {
-        match self.input.get(self.index) {
-            Some(Token::BeginParen) => {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::BeginParen) => {
                 self.index += 1;
                 true
             }
@@ -92,8 +92,8 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_end_paren(&mut self) -> bool {
-        match self.input.get(self.index) {
-            Some(Token::EndParen) => {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::EndParen) => {
                 self.index += 1;
                 true
             }
@@ -102,8 +102,8 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_comma(&mut self) -> bool {
-        match self.input.get(self.index) {
-            Some(Token::Comma) => {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::Comma) => {
                 self.index += 1;
                 true
             }
@@ -123,12 +123,12 @@ mod tests {
         #[test]
         fn parse_function_call() {
             let input = vec![
-                Token::Name("print".as_bytes().to_vec()),
-                Token::BeginParen,
-                Token::LiteralString("hello".as_bytes().to_vec()),
-                Token::Comma,
-                Token::LiteralString("world".as_bytes().to_vec()),
-                Token::EndParen,
+                Token::new(0, TokenKind::Name("print".as_bytes().to_vec())),
+                Token::new(5, TokenKind::BeginParen),
+                Token::new(6, TokenKind::LiteralString("hello".as_bytes().to_vec())),
+                Token::new(13, TokenKind::Comma),
+                Token::new(14, TokenKind::LiteralString("world".as_bytes().to_vec())),
+                Token::new(21, TokenKind::EndParen),
             ];
             let mut parser = Parser::new(&input);
 
@@ -155,11 +155,11 @@ mod tests {
         #[test]
         fn parse_args() {
             let input = vec![
-                Token::BeginParen,
-                Token::LiteralString("hello".as_bytes().to_vec()),
-                Token::Comma,
-                Token::LiteralString("world".as_bytes().to_vec()),
-                Token::EndParen,
+                Token::new(0, TokenKind::BeginParen),
+                Token::new(1, TokenKind::LiteralString("hello".as_bytes().to_vec())),
+                Token::new(8, TokenKind::Comma),
+                Token::new(9, TokenKind::LiteralString("world".as_bytes().to_vec())),
+                Token::new(16, TokenKind::EndParen),
             ];
             let mut parser = Parser::new(&input);
 
@@ -180,7 +180,10 @@ mod tests {
 
         #[test]
         fn parse_exp() {
-            let input = vec![Token::LiteralString("hello".as_bytes().to_vec())];
+            let input = vec![Token::new(
+                0,
+                TokenKind::LiteralString("hello".as_bytes().to_vec()),
+            )];
             let mut parser = Parser::new(&input);
 
             let actual = parser.parse_exp();
