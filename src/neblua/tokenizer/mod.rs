@@ -1,7 +1,8 @@
 pub mod error;
 
 use super::token::{Token, TokenKind};
-use error::Error;
+use super::util;
+use error::{Error, ErrorCause};
 
 /** Tokenizes the given input string into a sequence of tokens. */
 pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
@@ -42,33 +43,16 @@ impl<'a> Tokenizer<'a> {
             .or_else(|| self.consume_literal_string())
             .or_else(|| self.consume_name().map(Ok))
             .unwrap_or_else(|| {
-                let (line, column) = self.get_line_and_column_of(self.index);
-                Err(Error::new_unexpected_character(
-                    line,
-                    column,
-                    self.input[self.index] as char,
-                ))
+                Err(Error {
+                    index: self.index,
+                    cause: ErrorCause::UnexpectedCharacter(self.input[self.index] as char),
+                })
             });
         Some(result)
     }
 
     pub fn is_empty(&self) -> bool {
         self.index >= self.input.len()
-    }
-
-    fn get_line_and_column_of(&self, index: usize) -> (usize, usize) {
-        let mut line = 1;
-        let mut column = 1;
-        for i in 0..index {
-            if self.input[i] == b'\n' {
-                line += 1;
-                column = 1;
-            } else if self.input[i] & 0b11000000 != 0b10000000 {
-                // skip UTF-8 continuation byte
-                column += 1;
-            }
-        }
-        (line, column)
     }
 
     fn skip_whitespace(&mut self) {
@@ -109,8 +93,10 @@ impl<'a> Tokenizer<'a> {
             let next_char = match self.input.get(self.index) {
                 Some(x) => x,
                 None => {
-                    let (line, column) = self.get_line_and_column_of(self.index);
-                    return Some(Err(Error::new_unexpected_end_of_input(line, column)));
+                    return Some(Err(Error {
+                        index: self.index,
+                        cause: ErrorCause::UnexpectedEndOfInput,
+                    }))
                 }
             };
             if *next_char == b'"' {
