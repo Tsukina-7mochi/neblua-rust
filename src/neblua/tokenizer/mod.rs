@@ -1,7 +1,6 @@
 pub mod error;
 
 use super::token::{Token, TokenKind};
-use super::util;
 use error::{Error, ErrorCause};
 
 /** Tokenizes the given input string into a sequence of tokens. */
@@ -15,6 +14,8 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
             None => break,
         }
     }
+
+    result.push(Token::new(tokenizer.index, TokenKind::EOF));
 
     Ok(result)
 }
@@ -168,8 +169,8 @@ mod tests {
 
         #[test]
         fn empty_string() {
-            let tokens = tokenize(" ");
-            assert_eq!(tokens, Ok(vec![]));
+            let tokens = tokenize("");
+            assert_eq!(tokens, Ok(vec![Token::new(0, TokenKind::EOF)]));
         }
 
         #[test]
@@ -182,6 +183,7 @@ mod tests {
                     Token::new(5, TokenKind::BeginParen),
                     Token::new(6, TokenKind::LiteralString("hello".as_bytes().to_vec())),
                     Token::new(13, TokenKind::EndParen),
+                    Token::new(14, TokenKind::EOF),
                 ])
             );
         }

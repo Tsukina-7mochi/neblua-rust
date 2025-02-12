@@ -21,18 +21,26 @@ pub enum TokenKind {
     BeginParen,
     EndParen,
     Comma,
+    EOF,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &self.kind {
+        write!(f, "{}: {}", self.index, self.kind)
+    }
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             TokenKind::LiteralString(value) => {
-                write!(f, "{}: LiteralString({})", self.index, fmt_u8_vec(value))
+                write!(f, "LiteralString({})", fmt_u8_vec(value))
             }
-            TokenKind::Name(value) => write!(f, "{}: Name({})", self.index, fmt_u8_vec(value)),
-            TokenKind::BeginParen => write!(f, "{}: '('", self.index),
-            TokenKind::EndParen => write!(f, "{}: ')'", self.index),
-            TokenKind::Comma => write!(f, "{}: ','", self.index),
+            TokenKind::Name(value) => write!(f, "Name({})", fmt_u8_vec(value)),
+            TokenKind::BeginParen => write!(f, "'('"),
+            TokenKind::EndParen => write!(f, "')'"),
+            TokenKind::Comma => write!(f, "','"),
+            TokenKind::EOF => write!(f, "EOF"),
         }
     }
 }

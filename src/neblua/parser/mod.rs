@@ -1,7 +1,10 @@
+pub mod error;
+
 use super::ast::node::*;
 use super::token::{Token, TokenKind};
+use error::{Error, ErrorCause};
 
-pub fn parse(input: &Vec<Token>) -> Option<Node> {
+pub fn parse(input: &Vec<Token>) -> Result<Node, Error> {
     let mut parser = Parser::new(input);
     parser.parse()
 }
@@ -16,38 +19,83 @@ impl<'a> Parser<'a> {
         Self { index: 0, input }
     }
 
-    pub fn parse(&mut self) -> Option<Node> {
-        Some(Node::FunctionCall(self.parse_function_call()?))
+    pub fn parse(&mut self) -> Result<Node, Error> {
+        let function_call = match self.parse_function_call() {
+            Some(Ok(function_call)) => function_call,
+            Some(Err(err)) => return Err(err),
+            None => {
+                return Err(Error {
+                    index: self.index,
+                    cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+                })
+            }
+        };
+        if !self.consume_eof() {
+            return Err(Error {
+                index: self.index,
+                cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+            });
+        }
+        Ok(Node::FunctionCall(function_call))
     }
 
-    fn parse_function_call(&mut self) -> Option<FunctionCall> {
+    fn parse_function_call(&mut self) -> Option<Result<FunctionCall, Error>> {
         let name = self.consume_name()?;
-        let args = self.parse_args().expect("expected args");
+        let args = match self.parse_args() {
+            Some(Ok(args)) => args,
+            Some(Err(err)) => return Some(Err(err)),
+            None => {
+                return Some(Err(Error {
+                    index: self.index,
+                    cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+                }))
+            }
+        };
 
-        Some(FunctionCall { name, args })
+        Some(Ok(FunctionCall { name, args }))
     }
 
-    fn parse_args(&mut self) -> Option<Args> {
+    fn parse_args(&mut self) -> Option<Result<Args, Error>> {
         if !self.consume_begin_paren() {
             return None;
         }
 
-        let mut exp_list = vec![self.parse_exp().expect("expected exp")];
+        let first_exp = match self.parse_exp() {
+            Some(exp) => exp,
+            None => {
+                return Some(Err(Error {
+                    index: self.index,
+                    cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+                }))
+            }
+        };
+        let mut exp_list = vec![first_exp];
 
         loop {
             if !self.consume_comma() {
                 break;
             }
 
-            let exp = self.parse_exp().expect("expected exp");
+            let exp = match self.parse_exp() {
+                Some(exp) => exp,
+                None => {
+                    return Some(Err(Error {
+                        index: self.index,
+                        cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+                    }))
+                }
+            };
             exp_list.push(exp);
         }
 
         if !self.consume_end_paren() {
-            panic!("expected ')'");
+            return Some(Err(Error {
+                index: self.index,
+                cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
+            }));
         }
 
-        Some(Args { exp_list })
+        Some(Ok(Args { exp_list }))
     }
 
     fn parse_exp(&mut self) -> Option<Exp> {
@@ -110,6 +158,16 @@ impl<'a> Parser<'a> {
             _ => false,
         }
     }
+
+    fn consume_eof(&mut self) -> bool {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::EOF) => {
+                self.index += 1;
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -134,7 +192,7 @@ mod tests {
 
             let actual = parser.parse_function_call();
 
-            let expected = Some(FunctionCall {
+            let expected = Some(Ok(FunctionCall {
                 name: Name {
                     value: "print".as_bytes().to_vec(),
                 },
@@ -148,7 +206,7 @@ mod tests {
                         }),
                     ],
                 },
-            });
+            }));
             assert_eq!(actual, expected);
         }
 
@@ -165,7 +223,7 @@ mod tests {
 
             let actual = parser.parse_args();
 
-            let expected = Some(Args {
+            let expected = Some(Ok(Args {
                 exp_list: vec![
                     Exp::LiteralString(LiteralString {
                         value: "hello".as_bytes().to_vec(),
@@ -174,7 +232,7 @@ mod tests {
                         value: "world".as_bytes().to_vec(),
                     }),
                 ],
-            });
+            }));
             assert_eq!(actual, expected);
         }
 
