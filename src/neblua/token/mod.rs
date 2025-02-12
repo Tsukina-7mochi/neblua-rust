@@ -22,7 +22,7 @@ pub enum TokenKind {
     BeginParen,
     EndParen,
     Comma,
-    EOF,
+    EndOfInput,
 }
 
 impl fmt::Display for Token {
@@ -42,7 +42,7 @@ impl fmt::Display for TokenKind {
             TokenKind::BeginParen => write!(f, "'('"),
             TokenKind::EndParen => write!(f, "')'"),
             TokenKind::Comma => write!(f, "','"),
-            TokenKind::EOF => write!(f, "EOF"),
+            TokenKind::EndOfInput => write!(f, "EOF"),
         }
     }
 }

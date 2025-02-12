@@ -100,7 +100,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_exp(&mut self) -> Option<Exp> {
-        None.or_else(|| self.consume_nil().then(|| Exp::Nil))
+        None.or_else(|| self.consume_nil().then_some(Exp::Nil))
             .or_else(|| self.consume_literal_string().map(Exp::LiteralString))
     }
 
@@ -170,7 +170,7 @@ impl<'a> Parser<'a> {
 
     fn consume_eof(&mut self) -> bool {
         match self.input.get(self.index).map(|x| &x.kind) {
-            Some(TokenKind::EOF) => {
+            Some(TokenKind::EndOfInput) => {
                 self.index += 1;
                 true
             }

@@ -27,5 +27,5 @@ fn main() -> ExitCode {
     println!("AST:");
     println!("{}", ast);
 
-    return ExitCode::SUCCESS;
+    ExitCode::SUCCESS
 }

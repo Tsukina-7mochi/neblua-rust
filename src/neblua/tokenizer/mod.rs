@@ -8,14 +8,11 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
     let mut tokenizer = Tokenizer::new(input);
     let mut result = vec![];
 
-    loop {
-        match tokenizer.consume() {
-            Some(token) => result.push(token?),
-            None => break,
-        }
+    while let Some(token) = tokenizer.consume() {
+        result.push(token?)
     }
 
-    result.push(Token::new(tokenizer.index, TokenKind::EOF));
+    result.push(Token::new(tokenizer.index, TokenKind::EndOfInput));
 
     Ok(result)
 }
@@ -84,7 +81,7 @@ impl<'a> Tokenizer<'a> {
     fn consume_literal_string(&mut self) -> Option<Result<Token, Error>> {
         let token_index = self.index;
 
-        if !self.input.get(self.index).is_some_and(|x| *x == b'"') {
+        if self.input.get(self.index).is_none_or(|x| *x != b'"') {
             return None;
         }
 
@@ -193,7 +190,7 @@ mod tests {
         #[test]
         fn empty_string() {
             let tokens = tokenize("");
-            assert_eq!(tokens, Ok(vec![Token::new(0, TokenKind::EOF)]));
+            assert_eq!(tokens, Ok(vec![Token::new(0, TokenKind::EndOfInput)]));
         }
 
         #[test]
@@ -206,7 +203,7 @@ mod tests {
                     Token::new(5, TokenKind::BeginParen),
                     Token::new(6, TokenKind::LiteralString("hello".as_bytes().to_vec())),
                     Token::new(13, TokenKind::EndParen),
-                    Token::new(14, TokenKind::EOF),
+                    Token::new(14, TokenKind::EndOfInput),
                 ])
             );
         }

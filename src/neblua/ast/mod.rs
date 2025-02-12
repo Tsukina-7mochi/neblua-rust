@@ -25,7 +25,7 @@ fn print_tree(f: &mut fmt::Formatter, node: &dyn Node, depth: usize) -> Result<(
     node.fmt(f)?;
 
     for node in node.children() {
-        write!(f, "\n")?;
+        writeln!(f)?;
         print_tree(f, node, depth + 1)?;
     }
 

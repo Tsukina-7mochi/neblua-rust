@@ -1,5 +1,5 @@
-pub fn fmt_u8_vec(value: &Vec<u8>) -> String {
-    let display_value = match String::from_utf8(value.clone()) {
+pub fn fmt_u8_vec(value: &[u8]) -> String {
+    let display_value = match String::from_utf8(value.to_vec()) {
         Ok(s) => s,
         Err(_) => value
             .iter()
