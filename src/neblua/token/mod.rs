@@ -34,9 +34,9 @@ impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             TokenKind::LiteralString(value) => {
-                write!(f, "LiteralString({})", fmt_u8_vec(value))
+                write!(f, "LiteralString('{}')", fmt_u8_vec(value))
             }
-            TokenKind::Name(value) => write!(f, "Name({})", fmt_u8_vec(value)),
+            TokenKind::Name(value) => write!(f, "Name('{}')", fmt_u8_vec(value)),
             TokenKind::BeginParen => write!(f, "'('"),
             TokenKind::EndParen => write!(f, "')'"),
             TokenKind::Comma => write!(f, "','"),

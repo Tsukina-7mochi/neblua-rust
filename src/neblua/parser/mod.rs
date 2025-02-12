@@ -1,12 +1,13 @@
 pub mod error;
 
-use super::ast::node::*;
-use super::token::{Token, TokenKind};
+use crate::neblua::ast::{node::*, Ast};
+use crate::neblua::token::{Token, TokenKind};
 use error::{Error, ErrorCause};
 
-pub fn parse(input: &Vec<Token>) -> Result<Node, Error> {
+pub fn parse(input: &Vec<Token>) -> Result<Ast, Error> {
     let mut parser = Parser::new(input);
-    parser.parse()
+    let node = parser.parse()?;
+    Ok(Ast { root: node })
 }
 
 struct Parser<'a> {
@@ -19,7 +20,7 @@ impl<'a> Parser<'a> {
         Self { index: 0, input }
     }
 
-    pub fn parse(&mut self) -> Result<Node, Error> {
+    pub fn parse(&mut self) -> Result<Box<dyn Node>, Error> {
         let function_call = match self.parse_function_call() {
             Some(Ok(function_call)) => function_call,
             Some(Err(err)) => return Err(err),
@@ -36,7 +37,7 @@ impl<'a> Parser<'a> {
                 cause: ErrorCause::UnexpectedToken(self.input[self.index].clone()),
             });
         }
-        Ok(Node::FunctionCall(function_call))
+        Ok(Box::new(function_call))
     }
 
     fn parse_function_call(&mut self) -> Option<Result<FunctionCall, Error>> {
