@@ -100,9 +100,19 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_exp(&mut self) -> Option<Exp> {
-        match self.consume_literal_string() {
-            Some(literal_string) => Some(Exp::LiteralString(literal_string)),
-            None => None,
+        None.or_else(|| self.consume_nil().then(|| Exp::Nil))
+            .or_else(|| self.consume_literal_string().map(Exp::LiteralString))
+    }
+
+    fn consume_literal_string(&mut self) -> Option<LiteralString> {
+        match self.input.get(self.index).map(|x| &x.kind) {
+            Some(TokenKind::LiteralString(value)) => {
+                self.index += 1;
+                Some(LiteralString {
+                    value: value.clone(),
+                })
+            }
+            _ => None,
         }
     }
 
@@ -118,15 +128,13 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn consume_literal_string(&mut self) -> Option<LiteralString> {
+    fn consume_nil(&mut self) -> bool {
         match self.input.get(self.index).map(|x| &x.kind) {
-            Some(TokenKind::LiteralString(value)) => {
+            Some(TokenKind::Nil) => {
                 self.index += 1;
-                Some(LiteralString {
-                    value: value.clone(),
-                })
+                true
             }
-            _ => None,
+            _ => false,
         }
     }
 
@@ -238,7 +246,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_exp() {
+        fn parse_exp_literal_string() {
             let input = vec![Token::new(
                 0,
                 TokenKind::LiteralString("hello".as_bytes().to_vec()),
@@ -250,6 +258,15 @@ mod tests {
             let expected = Some(Exp::LiteralString(LiteralString {
                 value: "hello".as_bytes().to_vec(),
             }));
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn parse_exp_nil() {
+            let input = vec![Token::new(0, TokenKind::Nil)];
+            let mut parser = Parser::new(&input);
+            let actual = parser.parse_exp();
+            let expected = Some(Exp::Nil);
             assert_eq!(actual, expected);
         }
     }

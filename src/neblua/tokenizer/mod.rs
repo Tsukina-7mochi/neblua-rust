@@ -42,6 +42,7 @@ impl<'a> Tokenizer<'a> {
         let result = None
             .or_else(|| self.consume_char())
             .or_else(|| self.consume_literal_string())
+            .or_else(|| self.consume_keywords().map(Ok))
             .or_else(|| self.consume_name().map(Ok))
             .unwrap_or_else(|| {
                 Err(Error {
@@ -125,6 +126,28 @@ impl<'a> Tokenizer<'a> {
         }
 
         Some(Ok(Token::new(token_index, TokenKind::LiteralString(value))))
+    }
+
+    fn consume_keywords(&mut self) -> Option<Token> {
+        if self.consume_keyword("nil") {
+            return Some(Token::new(self.index - 3, TokenKind::Nil));
+        }
+        None
+    }
+
+    fn consume_keyword(&mut self, keyword: &str) -> bool {
+        let keyword = keyword.as_bytes();
+        if self.input[self.index..].starts_with(keyword) {
+            match self.input.get(self.index + keyword.len()) {
+                Some(x) if x.is_ascii_alphanumeric() || *x == b'_' => return false,
+                _ => {
+                    self.index += keyword.len();
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 
     fn consume_name(&mut self) -> Option<Token> {
@@ -288,6 +311,24 @@ mod tests {
                 Some(Ok(Token::new(
                     0,
                     TokenKind::Name("_foo_123".as_bytes().to_vec())
+                )))
+            );
+        }
+
+        #[test]
+        fn consume_nil() {
+            let mut tokenizer = Tokenizer::new("nil");
+            assert_eq!(tokenizer.consume(), Some(Ok(Token::new(0, TokenKind::Nil))));
+        }
+
+        #[test]
+        fn consume_nile() {
+            let mut tokenizer = Tokenizer::new("nile");
+            assert_eq!(
+                tokenizer.consume(),
+                Some(Ok(Token::new(
+                    0,
+                    TokenKind::Name("nile".as_bytes().to_vec())
                 )))
             );
         }

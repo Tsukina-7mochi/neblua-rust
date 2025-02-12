@@ -18,6 +18,7 @@ impl Token {
 pub enum TokenKind {
     LiteralString(Vec<u8>),
     Name(Vec<u8>),
+    Nil,
     BeginParen,
     EndParen,
     Comma,
@@ -37,6 +38,7 @@ impl fmt::Display for TokenKind {
                 write!(f, "LiteralString('{}')", fmt_u8_vec(value))
             }
             TokenKind::Name(value) => write!(f, "Name('{}')", fmt_u8_vec(value)),
+            TokenKind::Nil => write!(f, "nil"),
             TokenKind::BeginParen => write!(f, "'('"),
             TokenKind::EndParen => write!(f, "')'"),
             TokenKind::Comma => write!(f, "','"),

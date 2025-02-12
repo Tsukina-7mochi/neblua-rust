@@ -1,4 +1,4 @@
 functioncall ::= Name args
 args ::= '(' [ explist ] ')'
 explist ::= exp { ',' exp }
-exp ::= LiteralString
+exp ::= nil | LiteralString

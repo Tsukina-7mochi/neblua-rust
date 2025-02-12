@@ -6,7 +6,7 @@ use neblua::parser;
 use neblua::tokenizer;
 
 fn main() -> ExitCode {
-    let input = "print(\"hello\", \"world\")";
+    let input = "print(\"hello\", \"world\", nil)";
 
     let tokens = match tokenizer::tokenize(input) {
         Ok(tokens) => tokens,

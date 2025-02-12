@@ -39,6 +39,20 @@ impl Node for Name {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nil {}
+
+impl Node for Nil {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "nil")
+    }
+    fn children(&self) -> Vec<&dyn Node> {
+        Vec::new()
+    }
+}
+
+const NIL: Nil = Nil {};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionCall {
     pub name: Name,
     pub args: Args,
@@ -72,6 +86,7 @@ impl Node for Args {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Exp {
     LiteralString(LiteralString),
+    Nil,
 }
 
 impl Node for Exp {
@@ -82,6 +97,7 @@ impl Node for Exp {
     fn children(&self) -> Vec<&dyn Node> {
         match self {
             Exp::LiteralString(literal_string) => vec![literal_string],
+            Exp::Nil => vec![&NIL],
         }
     }
 }
